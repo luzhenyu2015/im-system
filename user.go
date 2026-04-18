@@ -68,6 +68,26 @@ func (this *user) DoMessage(msg string) {
 			this.Name = newName
 			this.SendMsg("您的用户名已重命名为为：" + this.Name + "\n")
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.SendMsg("消息格式错误\n")
+			return
+		}
+
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.SendMsg("目标用户不存在\n")
+			return
+		}
+
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.SendMsg("请输入消息内容\n")
+			return
+		}
+		remoteUser.SendMsg(this.Name + "对你说:" + content)
 	} else {
 		this.server.Broadcast(this, msg)
 	}
