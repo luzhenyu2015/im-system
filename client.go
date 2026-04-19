@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type client struct {
@@ -31,6 +33,10 @@ func NewClient(serverIp string, serverPort int) *client {
 	return client
 }
 
+func (client *client) DealResponse() {
+	io.Copy(os.Stdout, client.conn)
+}
+
 func (client *client) menu() bool {
 	var flag int
 
@@ -49,6 +55,19 @@ func (client *client) menu() bool {
 	}
 }
 
+func (client *client) updateName() bool {
+	fmt.Println("请输入新用户名")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := "rename|" + client.Name + "\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("net.Write err:", err)
+		return false
+	}
+	return true
+}
+
 func (client *client) Run() {
 	for client.flag != 0 {
 		if client.menu() != true {
@@ -62,7 +81,7 @@ func (client *client) Run() {
 			fmt.Println("私聊模式选择..")
 			break
 		case 3:
-			fmt.Println("更新用户名选择..")
+			client.updateName()
 			break
 		}
 	}
@@ -83,6 +102,9 @@ func main() {
 		fmt.Println("连接服务器失败")
 		return
 	}
+
+	go client.DealResponse()
+
 	fmt.Println("连接服务器成功")
 
 	client.Run()
